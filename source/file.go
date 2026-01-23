@@ -29,34 +29,9 @@ func (s *FileSource) Load() (map[string]any, error) {
 	if err := yaml.Unmarshal(b, &m); err != nil {
 		return nil, err
 	}
-
-	// Flatten nested structure into dot-notation keys
-	return flatten(m), nil
+	return m, nil
 }
 
 func (s *FileSource) WatchPaths() []string {
 	return []string{s.path}
-}
-
-// flatten converts nested maps into flat dot-notation keys
-func flatten(m map[string]any) map[string]any {
-	result := make(map[string]any)
-	flattenHelper("", m, result)
-	return result
-}
-
-func flattenHelper(prefix string, m map[string]any, result map[string]any) {
-	for k, v := range m {
-		key := k
-		if prefix != "" {
-			key = prefix + "." + k
-		}
-
-		switch nested := v.(type) {
-		case map[string]any:
-			flattenHelper(key, nested, result)
-		default:
-			result[key] = v
-		}
-	}
 }
