@@ -1,0 +1,61 @@
+# Application Configuration
+server:
+  host: "0.0.0.0"                  # Server host address
+  port: 8080                        # Server port (1-65535)
+  mode: "development"                # Environment: development, staging, production
+  timeout: 30s                       # Request timeout duration
+  read_timeout: 15s                  # Read timeout for requests
+  write_timeout: 15s                 # Write timeout for responses
+
+database:
+  driver: "postgres"                 # Database driver: postgres, mysql, sqlite
+  host: "localhost"                   # Database host
+  port: 5432                          # Database port
+  name: "myapp"                       # Database name
+  user: "postgres"                     # Database username
+  password: "${DB_PASSWORD}"           # Database password - use env var
+  max_conns: 20                        # Maximum connections (1-100)
+  min_conns: 5                         # Minimum connections pool
+  conn_max_lifetime: 1h                # Connection max lifetime
+  conn_max_idle_time: 30m              # Connection max idle time
+
+logging:
+  level: "info"                        # Log level: debug, info, warn, error
+  format: "json"                       # Log format: json, text
+  output: "stdout"                      # Output destination
+  file: "logs/app.log"                   # Log file path (if output=file)
+
+cache:
+  enabled: false                        # Enable/disable caching
+  driver: "redis"                        # Cache driver: redis, memcached
+  ttl: 300                               # Cache TTL in seconds (0 for no expiry)
+  redis:
+    host: "localhost"
+    port: 6379
+    password: "${REDIS_PASSWORD}"
+    db: 0
+
+security:
+  jwt_secret: "${JWT_SECRET}"           # JWT signing secret - use env var
+  encryption_key: "${ENCRYPTION_KEY}"   # Data encryption key - use env var
+  cors_enabled: true                     # Enable CORS
+  cors_allowed_origins:
+    - "http://localhost:3000"
+    - "https://myapp.com"
+  rate_limit: 100                         # Requests per minute per IP
+
+features:
+  enable_metrics: true                    # Enable metrics collection
+  enable_tracing: false                    # Enable distributed tracing
+  enable_profiling: false                   # Enable profiling endpoints
+  beta_features: false                       # Enable beta/unstable features
+
+monitoring:
+  metrics_port: 9090                        # Prometheus metrics port
+  health_check_enabled: true                  # Enable health check endpoint
+  health_check_path: "/health"                 # Health check path
+
+tracing:
+  provider: "jaeger"                           # Tracing provider: jaeger, zipkin
+  endpoint: "http://localhost:14268/api/traces"
+  sample_rate: 0.1                              # Trace sample rate (0-1)

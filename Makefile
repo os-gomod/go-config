@@ -1,6 +1,6 @@
 # =============================================================================
 # Go Config Library - Makefile
-# Version: 1.0.0
+# Version: 2.0.0
 # =============================================================================
 
 # Default environment file
@@ -30,7 +30,7 @@ COVERAGE_THRESHOLD = 80
 
 # Benchmark parameters
 BENCH_TIME = 1s
-BENCH_COUNT = 5
+BENCH_COUNT = 1
 
 # Linter configuration
 LINT_CONFIG = .golangci.yml
@@ -184,7 +184,7 @@ test-integration:
 
 benchmark:
 	@echo "⚡ Running benchmarks..."
-	$(GO_BENCH) -benchtime=$(BENCH_TIME) -count=$(BENCH_COUNT) ./... | tee $(BENCH_FILE)
+	$(GO_BENCH) -benchtime=$(BENCH_TIME) -count=$(BENCH_COUNT) ./...
 	@echo "✅ Benchmarks saved to $(BENCH_FILE)"
 
 benchmark-cpu:

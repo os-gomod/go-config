@@ -1,9 +1,0 @@
-# Local overrides for development
-database:
-  password: "{{envOrDefault \"DB_PASSWORD\" \"dev_password\"}}"
-
-logging:
-  level: "{{envOrDefault \"LOG_LEVEL\" \"debug\"}}"
-
-features:
-  beta_features: "{{envOrDefault \"ENABLE_BETA\" \"true\"}}"
