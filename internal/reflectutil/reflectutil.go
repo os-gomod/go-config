@@ -37,8 +37,7 @@ type FieldInfo struct {
 
 // Cache caches type information.
 type Cache struct {
-	types  sync.Map
-	fields sync.Map
+	types sync.Map
 }
 
 // NewCache creates a new type cache.
@@ -177,7 +176,7 @@ func isExported(t reflect.Type) bool {
 		}
 	}
 
-	return true
+	return false
 }
 
 // ValueSetter sets values using reflection.
@@ -193,6 +192,8 @@ func NewValueSetter() *ValueSetter {
 }
 
 // Set sets a value using reflection.
+//
+//nolint:gocyclo // This conversion entrypoint intentionally supports many type branches.
 func (s *ValueSetter) Set(target reflect.Value, value any) error {
 	if target.Kind() == reflect.Ptr {
 		if target.IsNil() {
@@ -281,6 +282,8 @@ func stringify(v any) string {
 	}
 }
 
+const maxInt64AsUint = uint64(1<<63 - 1)
+
 // toInt64 converts a value to int64.
 func toInt64(v any) (int64, bool) {
 	switch i := v.(type) {
@@ -295,6 +298,9 @@ func toInt64(v any) (int64, bool) {
 	case int64:
 		return i, true
 	case uint:
+		if uint64(i) > maxInt64AsUint {
+			return 0, false
+		}
 		return int64(i), true
 	case uint8:
 		return int64(i), true
@@ -303,6 +309,9 @@ func toInt64(v any) (int64, bool) {
 	case uint32:
 		return int64(i), true
 	case uint64:
+		if i > maxInt64AsUint {
+			return 0, false
+		}
 		return int64(i), true
 	case float32:
 		return int64(i), true
@@ -412,8 +421,8 @@ func Dereference(v reflect.Value) reflect.Value {
 }
 
 // MakeSlice creates a slice of the given type and length.
-func MakeSlice(t reflect.Type, len, cap int) reflect.Value {
-	return reflect.MakeSlice(reflect.SliceOf(t), len, cap)
+func MakeSlice(t reflect.Type, length, capacity int) reflect.Value {
+	return reflect.MakeSlice(reflect.SliceOf(t), length, capacity)
 }
 
 // MakeMap creates a map of the given type.

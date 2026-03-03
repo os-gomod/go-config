@@ -142,10 +142,10 @@ func insertNested(m map[string]any, key string, value types.Value) {
 	for i, part := range parts {
 		if i == len(parts)-1 {
 			// Last part, store the value
-			if existing, ok := current[part]; ok {
+			if existing, hasExisting := current[part]; hasExisting {
 				// Merge if both are maps
-				if existingMap, ok := existing.(map[string]any); ok {
-					if newMap, ok := value.Raw().(map[string]any); ok {
+				if existingMap, existingIsMap := existing.(map[string]any); existingIsMap {
+					if newMap, newIsMap := value.Raw().(map[string]any); newIsMap {
 						for k, v := range newMap {
 							existingMap[k] = v
 						}
@@ -281,7 +281,7 @@ func (r *Resolver) Record(key string, values []types.Value, strategy Strategy) {
 }
 
 // resolve resolves a conflict according to the strategy.
-func (r *Resolver) resolve(key string, values []types.Value, strategy Strategy) types.Value {
+func (r *Resolver) resolve(_ string, values []types.Value, strategy Strategy) types.Value {
 	if len(values) == 0 {
 		return types.Value{}
 	}
@@ -292,14 +292,14 @@ func (r *Resolver) resolve(key string, values []types.Value, strategy Strategy) 
 	switch strategy {
 	case StrategyPriority:
 		// Find highest priority
-		max := values[0]
+		best := values[0]
 		for _, v := range values[1:] {
-			if v.Priority() > max.Priority() {
-				max = v
+			if v.Priority() > best.Priority() {
+				best = v
 			}
 		}
 
-		return max
+		return best
 	case StrategyFirst:
 		return values[0]
 	case StrategyLast:

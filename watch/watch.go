@@ -4,6 +4,7 @@ package watch
 
 import (
 	"context"
+	"os"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -83,13 +84,14 @@ func (m *Manager) Start(ctx context.Context) error {
 		return nil // Already running
 	}
 
-	m.ctx, m.cancel = context.WithCancel(ctx)
+	runCtx, cancel := context.WithCancel(ctx)
+	m.ctx, m.cancel = runCtx, cancel
 
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
 	for id, w := range m.watchers {
-		if err := w.Start(m.ctx); err != nil {
+		if err := w.Start(runCtx); err != nil {
 			return types.NewError(types.ErrWatchError, "failed to start watcher: "+id,
 				types.WithCause(err))
 		}
@@ -128,7 +130,7 @@ func (m *Manager) forwardChanges(id string, w Watcher) {
 				func() {
 					defer func() {
 						if r := recover(); r != nil {
-							// Log panic but don't crash
+							_ = r // Log panic but don't crash.
 						}
 					}()
 					_ = cb(m.ctx, change)
@@ -309,8 +311,16 @@ type FileInfo struct {
 
 // getFileInfo gets file information without importing os in the signature.
 func getFileInfo(path string) (FileInfo, error) {
-	// This is implemented in the source package
-	return FileInfo{}, nil
+	info, err := os.Stat(path)
+	if err != nil {
+		return FileInfo{}, err
+	}
+
+	return FileInfo{
+		Name:    info.Name(),
+		Size:    info.Size(),
+		ModTime: info.ModTime(),
+	}, nil
 }
 
 // MultiWatcher combines multiple watchers.
@@ -342,11 +352,14 @@ func (w *MultiWatcher) Start(ctx context.Context) error {
 		return nil
 	}
 
-	w.ctx, w.cancel = context.WithCancel(ctx)
+	runCtx, cancel := context.WithCancel(ctx)
+	w.ctx, w.cancel = runCtx, cancel
 
 	for _, watcher := range w.watchers {
-		if err := watcher.Start(w.ctx); err != nil {
-			w.Stop()
+		if err := watcher.Start(runCtx); err != nil {
+			if stopErr := w.Stop(); stopErr != nil {
+				return stopErr
+			}
 
 			return err
 		}
@@ -392,7 +405,9 @@ func (w *MultiWatcher) Stop() error {
 
 	// Stop all watchers
 	for _, watcher := range w.watchers {
-		watcher.Stop()
+		if err := watcher.Stop(); err != nil {
+			return err
+		}
 	}
 
 	// Wait for forward goroutines

@@ -81,17 +81,17 @@ type SecurityConfig struct {
 
 // FeaturesConfig holds feature flag configuration.
 type FeaturesConfig struct {
-	EnableMetrics  bool `config:"enable_metrics"`
-	EnableTracing  bool `config:"enable_tracing"`
+	EnableMetrics   bool `config:"enable_metrics"`
+	EnableTracing   bool `config:"enable_tracing"`
 	EnableProfiling bool `config:"enable_profiling"`
-	BetaFeatures   bool `config:"beta_features"`
+	BetaFeatures    bool `config:"beta_features"`
 }
 
 // MonitoringConfig holds monitoring configuration.
 type MonitoringConfig struct {
-	MetricsPort       int    `config:"metrics_port" validate:"min=1,max=65535"`
+	MetricsPort        int    `config:"metrics_port" validate:"min=1,max=65535"`
 	HealthCheckEnabled bool   `config:"health_check_enabled"`
-	HealthCheckPath   string `config:"health_check_path"`
+	HealthCheckPath    string `config:"health_check_path"`
 }
 
 // TracingConfig holds tracing configuration.
@@ -150,7 +150,7 @@ func ExampleNew() {
 func ExampleNew_withObserver() {
 	cfg, err := config.New(
 		config.WithFile("config.yaml"),
-		config.WithObserver(func(ctx context.Context, event types.Event) {
+		config.WithObserver(func(_ context.Context, event types.Event) {
 			fmt.Printf("Config changed: %s %s\n", event.Key, event.Type)
 		}),
 	)
@@ -166,7 +166,6 @@ func ExampleNew_withObserver() {
 
 	// Output:
 }
-
 
 // ExampleConfig_Bind demonstrates struct binding.
 func ExampleConfig_Bind() {
@@ -255,13 +254,12 @@ func ExampleConfig_Bind() {
 	// Database: admin@db.local:5432/mydb
 }
 
-
 // ExampleConfig_Validate demonstrates configuration validation.
 func ExampleConfig_Validate() {
 	cfg, err := config.New(
 		config.WithMemory(map[string]any{
-			"server.host":  "localhost",
-			"server.port":  8080,
+			"server.host":   "localhost",
+			"server.port":   8080,
 			"logging.level": "info",
 		}),
 	)
@@ -287,7 +285,6 @@ func ExampleConfig_Validate() {
 	// Output:
 	// Configuration is valid
 }
-
 
 // ExampleConfig_Snapshot demonstrates configuration snapshots.
 func ExampleConfig_Snapshot() {
@@ -319,7 +316,6 @@ func ExampleConfig_Snapshot() {
 	// Snapshot ID: 1
 	// Configuration restored to previous state
 }
-
 
 // ExampleConfig_Export demonstrates exporting configuration.
 func ExampleConfig_Export() {
@@ -353,7 +349,6 @@ func ExampleConfig_Export() {
 	// YAML empty: false
 }
 
-
 // ExampleConfig_encryption demonstrates encrypted configuration values.
 func ExampleConfig_encryption() {
 	// Initialize with encryption key
@@ -386,7 +381,6 @@ func ExampleConfig_encryption() {
 	// Encrypted: true
 	// Decrypted: my-secret-password
 }
-
 
 // ExampleLoadEnv demonstrates loading from environment variables.
 func ExampleLoadEnv() {
@@ -437,7 +431,6 @@ func ExampleLoadEnv() {
 	// Database Name: mydb
 }
 
-
 // ExampleConfig_hotReload demonstrates hot reload functionality.
 func ExampleConfig_hotReload() {
 	cfg, err := config.New(
@@ -458,7 +451,6 @@ func ExampleConfig_hotReload() {
 	// Output:
 	// Hot reload watcher started
 }
-
 
 // ExampleConfig_Merge demonstrates merging configurations.
 func ExampleConfig_Merge() {
@@ -501,7 +493,6 @@ func ExampleConfig_Merge() {
 	// Debug: true
 }
 
-
 // ExampleConfig_templateProcessing demonstrates template processing.
 func ExampleConfig_templateProcessing() {
 	cfg, err := config.New(
@@ -531,7 +522,6 @@ func ExampleConfig_templateProcessing() {
 	// Log: /opt/myapp/logs
 	// Config: /opt/myapp/config
 }
-
 
 // ExampleConfig_context demonstrates context-aware operations.
 func ExampleConfig_context() {
@@ -564,7 +554,6 @@ func ExampleConfig_context() {
 	// Output:
 	// Port: 8080
 }
-
 
 // ExampleGlobal demonstrates using the global configuration instance.
 func ExampleGlobal() {

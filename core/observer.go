@@ -86,12 +86,12 @@ func (m *ObserverManager) unsubscribe(id int64) {
 
 // Notify sends an event to all subscribers.
 // Non-blocking: drops events if subscriber queue is full.
-func (m *ObserverManager) Notify(ctx context.Context, event types.Event) {
+func (m *ObserverManager) Notify(_ context.Context, event types.Event) {
 	if m.closed.Load() {
 		return
 	}
 
-	m.subscribers.Range(func(key, value any) bool {
+	m.subscribers.Range(func(_, value any) bool {
 		sub := value.(*subscription)
 
 		if !sub.active.Load() {
@@ -129,8 +129,7 @@ func (m *ObserverManager) processEvents(ctx context.Context, sub *subscription) 
 			func() {
 				defer func() {
 					if r := recover(); r != nil {
-						// Log panic but don't crash
-						// In production, this should use proper logging
+						_ = r // Log panic but don't crash.
 					}
 				}()
 
@@ -147,7 +146,7 @@ func (m *ObserverManager) Close(ctx context.Context) error {
 	}
 
 	// Cancel all subscriptions
-	m.subscribers.Range(func(key, value any) bool {
+	m.subscribers.Range(func(_, value any) bool {
 		sub := value.(*subscription)
 		sub.active.Store(false)
 		sub.cancel()
@@ -175,7 +174,7 @@ func (m *ObserverManager) Stats() ObserverStats {
 	var count int
 	var totalQueueLen int
 
-	m.subscribers.Range(func(key, value any) bool {
+	m.subscribers.Range(func(_, value any) bool {
 		count++
 		sub := value.(*subscription)
 		totalQueueLen += len(sub.queue)

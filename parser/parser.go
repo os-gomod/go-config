@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -105,26 +106,24 @@ func (p *yamlParser) Parse(data []byte) (map[string]any, error) {
 
 	lines := bytes.Split(data, []byte("\n"))
 
-	var currentKey string
 	currentMap := result
 	var mapStack []map[string]any
 	var indentStack []int
 
-	for _, line := range lines {
+	for _, rawLine := range lines {
 		// Skip empty lines and comments
-		line = bytes.TrimSpace(line)
+		line := bytes.TrimSpace(rawLine)
 		if len(line) == 0 || line[0] == '#' {
 			continue
 		}
 
 		// Calculate indentation
 		indent := 0
-		for i := range len(line) {
-			if line[i] == ' ' || line[i] == '\t' {
-				indent++
-			} else {
+		for i := range len(rawLine) {
+			if rawLine[i] != ' ' && rawLine[i] != '\t' {
 				break
 			}
+			indent++
 		}
 
 		// Handle indentation changes
@@ -145,22 +144,21 @@ func (p *yamlParser) Parse(data []byte) (map[string]any, error) {
 
 		key := bytes.TrimSpace(line[:colonIdx])
 		value := bytes.TrimSpace(line[colonIdx+1:])
+		value = bytes.TrimSpace([]byte(stripInlineYAMLComment(string(value))))
 
 		// Remove quotes from key
 		key = bytes.Trim(key, "\"'")
 
-		currentKey = string(key)
-
 		if len(value) == 0 {
 			// Nested map
 			newMap := make(map[string]any)
-			currentMap[currentKey] = newMap
+			currentMap[string(key)] = newMap
 			mapStack = append(mapStack, currentMap)
 			indentStack = append(indentStack, indent)
 			currentMap = newMap
 		} else {
 			// Leaf value
-			currentMap[currentKey] = parseValue(string(value))
+			currentMap[string(key)] = parseValue(string(value))
 		}
 	}
 
@@ -191,14 +189,12 @@ func parseValue(s string) any {
 	}
 
 	// Integer
-	var intVal int
-	if _, err := fmt.Sscanf(s, "%d", &intVal); err == nil {
+	if intVal, err := strconv.Atoi(s); err == nil {
 		return intVal
 	}
 
 	// Float
-	var floatVal float64
-	if _, err := fmt.Sscanf(s, "%f", &floatVal); err == nil {
+	if floatVal, err := strconv.ParseFloat(s, 64); err == nil {
 		return floatVal
 	}
 
@@ -342,18 +338,39 @@ func parseTOMLValue(s string) any {
 	}
 
 	// Integer
-	var intVal int
-	if _, err := fmt.Sscanf(s, "%d", &intVal); err == nil {
+	if intVal, err := strconv.Atoi(s); err == nil {
 		return intVal
 	}
 
 	// Float
-	var floatVal float64
-	if _, err := fmt.Sscanf(s, "%f", &floatVal); err == nil {
+	if floatVal, err := strconv.ParseFloat(s, 64); err == nil {
 		return floatVal
 	}
 
 	return s
+}
+
+func stripInlineYAMLComment(s string) string {
+	inSingle := false
+	inDouble := false
+	escaped := false
+
+	for i, r := range s {
+		switch {
+		case escaped:
+			escaped = false
+		case r == '\\':
+			escaped = true
+		case r == '\'' && !inDouble:
+			inSingle = !inSingle
+		case r == '"' && !inSingle:
+			inDouble = !inDouble
+		case r == '#' && !inSingle && !inDouble:
+			return strings.TrimSpace(s[:i])
+		}
+	}
+
+	return strings.TrimSpace(s)
 }
 
 // Flatten converts a nested map to dotted keys.

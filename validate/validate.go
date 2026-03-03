@@ -168,10 +168,10 @@ func (b *Builder) Required(key, message string) *Builder {
 }
 
 // Min adds a minimum value rule.
-func (b *Builder) Min(key string, min int, message string) *Builder {
+func (b *Builder) Min(key string, minValue int, message string) *Builder {
 	b.rules = append(b.rules, Rule{
 		Key:       key,
-		Validator: &MinValidator{Min: min},
+		Validator: &MinValidator{Min: minValue},
 		Message:   message,
 	})
 
@@ -179,10 +179,10 @@ func (b *Builder) Min(key string, min int, message string) *Builder {
 }
 
 // Max adds a maximum value rule.
-func (b *Builder) Max(key string, max int, message string) *Builder {
+func (b *Builder) Max(key string, maxValue int, message string) *Builder {
 	b.rules = append(b.rules, Rule{
 		Key:       key,
-		Validator: &MaxValidator{Max: max},
+		Validator: &MaxValidator{Max: maxValue},
 		Message:   message,
 	})
 
@@ -190,10 +190,10 @@ func (b *Builder) Max(key string, max int, message string) *Builder {
 }
 
 // Range adds a range rule.
-func (b *Builder) Range(key string, min, max int, message string) *Builder {
+func (b *Builder) Range(key string, minValue, maxValue int, message string) *Builder {
 	b.rules = append(b.rules, Rule{
 		Key:       key,
-		Validator: &RangeValidator{Min: min, Max: max},
+		Validator: &RangeValidator{Min: minValue, Max: maxValue},
 		Message:   message,
 	})
 
@@ -246,7 +246,7 @@ type RequiredValidator struct{}
 
 func (v *RequiredValidator) Name() string { return "required" }
 
-func (v *RequiredValidator) Validate(ctx context.Context, value any) error {
+func (v *RequiredValidator) Validate(_ context.Context, value any) error {
 	if value == nil {
 		return errors.New("value is required")
 	}
@@ -273,27 +273,8 @@ type MinValidator struct {
 
 func (v *MinValidator) Name() string { return "min" }
 
-func (v *MinValidator) Validate(ctx context.Context, value any) error {
-	switch val := value.(type) {
-	case int:
-		if val < v.Min {
-			return fmt.Errorf("value must be at least %d", v.Min)
-		}
-	case int64:
-		if val < int64(v.Min) {
-			return fmt.Errorf("value must be at least %d", v.Min)
-		}
-	case float64:
-		if val < float64(v.Min) {
-			return fmt.Errorf("value must be at least %d", v.Min)
-		}
-	case string:
-		if len(val) < v.Min {
-			return fmt.Errorf("string length must be at least %d", v.Min)
-		}
-	}
-
-	return nil
+func (v *MinValidator) Validate(_ context.Context, value any) error {
+	return validateBoundary(value, v.Min, true)
 }
 
 // MaxValidator checks if a value is at most a maximum.
@@ -303,23 +284,49 @@ type MaxValidator struct {
 
 func (v *MaxValidator) Name() string { return "max" }
 
-func (v *MaxValidator) Validate(ctx context.Context, value any) error {
+func (v *MaxValidator) Validate(_ context.Context, value any) error {
+	return validateBoundary(value, v.Max, false)
+}
+
+func validateBoundary(value any, boundary int, minMode bool) error {
+	check := func(actual int64) bool {
+		if minMode {
+			return actual < int64(boundary)
+		}
+
+		return actual > int64(boundary)
+	}
+
+	message := "at least"
+	if !minMode {
+		message = "at most"
+	}
+
 	switch val := value.(type) {
 	case int:
-		if val > v.Max {
-			return fmt.Errorf("value must be at most %d", v.Max)
+		if check(int64(val)) {
+			return fmt.Errorf("value must be %s %d", message, boundary)
 		}
 	case int64:
-		if val > int64(v.Max) {
-			return fmt.Errorf("value must be at most %d", v.Max)
+		if check(val) {
+			return fmt.Errorf("value must be %s %d", message, boundary)
 		}
 	case float64:
-		if val > float64(v.Max) {
-			return fmt.Errorf("value must be at most %d", v.Max)
+		if minMode {
+			if val < float64(boundary) {
+				return fmt.Errorf("value must be %s %d", message, boundary)
+			}
+
+			return nil
 		}
+
+		if val > float64(boundary) {
+			return fmt.Errorf("value must be %s %d", message, boundary)
+		}
+
 	case string:
-		if len(val) > v.Max {
-			return fmt.Errorf("string length must be at most %d", v.Max)
+		if check(int64(len(val))) {
+			return fmt.Errorf("string length must be %s %d", message, boundary)
 		}
 	}
 
@@ -334,7 +341,7 @@ type RangeValidator struct {
 
 func (v *RangeValidator) Name() string { return "range" }
 
-func (v *RangeValidator) Validate(ctx context.Context, value any) error {
+func (v *RangeValidator) Validate(_ context.Context, value any) error {
 	switch val := value.(type) {
 	case int:
 		if val < v.Min || val > v.Max {
@@ -360,7 +367,7 @@ type PatternValidator struct {
 
 func (v *PatternValidator) Name() string { return "pattern" }
 
-func (v *PatternValidator) Validate(ctx context.Context, value any) error {
+func (v *PatternValidator) Validate(_ context.Context, value any) error {
 	s, ok := value.(string)
 	if !ok {
 		return errors.New("value must be a string")
@@ -380,7 +387,7 @@ type EnumValidator struct {
 
 func (v *EnumValidator) Name() string { return "enum" }
 
-func (v *EnumValidator) Validate(ctx context.Context, value any) error {
+func (v *EnumValidator) Validate(_ context.Context, value any) error {
 	s, ok := value.(string)
 	if !ok {
 		return errors.New("value must be a string")
@@ -400,7 +407,7 @@ type EmailValidator struct{}
 
 func (v *EmailValidator) Name() string { return "email" }
 
-func (v *EmailValidator) Validate(ctx context.Context, value any) error {
+func (v *EmailValidator) Validate(_ context.Context, value any) error {
 	s, ok := value.(string)
 	if !ok {
 		return errors.New("value must be a string")
@@ -426,7 +433,7 @@ type URLValidator struct{}
 
 func (v *URLValidator) Name() string { return "url" }
 
-func (v *URLValidator) Validate(ctx context.Context, value any) error {
+func (v *URLValidator) Validate(_ context.Context, value any) error {
 	s, ok := value.(string)
 	if !ok {
 		return errors.New("value must be a string")
@@ -447,7 +454,7 @@ type DurationValidator struct {
 
 func (v *DurationValidator) Name() string { return "duration" }
 
-func (v *DurationValidator) Validate(ctx context.Context, value any) error {
+func (v *DurationValidator) Validate(_ context.Context, value any) error {
 	d, ok := value.(time.Duration)
 	if !ok {
 		return errors.New("value must be a duration")
@@ -629,7 +636,7 @@ type AlphanumericValidator struct{}
 
 func (v *AlphanumericValidator) Name() string { return "alphanumeric" }
 
-func (v *AlphanumericValidator) Validate(ctx context.Context, value any) error {
+func (v *AlphanumericValidator) Validate(_ context.Context, value any) error {
 	s, ok := value.(string)
 	if !ok {
 		return errors.New("value must be a string")
@@ -649,7 +656,7 @@ type UUIDValidator struct{}
 
 func (v *UUIDValidator) Name() string { return "uuid" }
 
-func (v *UUIDValidator) Validate(ctx context.Context, value any) error {
+func (v *UUIDValidator) Validate(_ context.Context, value any) error {
 	s, ok := value.(string)
 	if !ok {
 		return errors.New("value must be a string")
@@ -666,7 +673,7 @@ func (v *UUIDValidator) Validate(ctx context.Context, value any) error {
 				return errors.New("invalid UUID format")
 			}
 		} else {
-			if !unicode.IsDigit(r) && !((r >= 'a' && r <= 'f') || (r >= 'A' && r <= 'F')) {
+			if !unicode.IsDigit(r) && (r < 'a' || r > 'f') && (r < 'A' || r > 'F') {
 				return errors.New("invalid UUID format")
 			}
 		}

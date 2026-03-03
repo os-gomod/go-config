@@ -285,7 +285,7 @@ func BenchmarkObserver(b *testing.B) {
 	defer cfg.Close(context.Background())
 
 	var received atomic.Int64
-	cfg.Observe(func(ctx context.Context, event types.Event) {
+	cfg.Observe(func(_ context.Context, _ types.Event) {
 		received.Add(1)
 	})
 

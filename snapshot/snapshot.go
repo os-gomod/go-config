@@ -377,7 +377,7 @@ func NewMemoryStore() *MemoryStore {
 }
 
 // Save stores a snapshot.
-func (s *MemoryStore) Save(ctx context.Context, snapshot *Snapshot) error {
+func (s *MemoryStore) Save(_ context.Context, snapshot *Snapshot) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -399,7 +399,7 @@ func (s *MemoryStore) Save(ctx context.Context, snapshot *Snapshot) error {
 }
 
 // Load retrieves a snapshot by ID.
-func (s *MemoryStore) Load(ctx context.Context, id uint64) (*Snapshot, error) {
+func (s *MemoryStore) Load(_ context.Context, id uint64) (*Snapshot, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -412,7 +412,7 @@ func (s *MemoryStore) Load(ctx context.Context, id uint64) (*Snapshot, error) {
 }
 
 // List returns snapshots matching the options.
-func (s *MemoryStore) List(ctx context.Context, opts ListOptions) ([]*Snapshot, error) {
+func (s *MemoryStore) List(_ context.Context, opts ListOptions) ([]*Snapshot, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -456,7 +456,7 @@ func (s *MemoryStore) List(ctx context.Context, opts ListOptions) ([]*Snapshot, 
 }
 
 // Delete removes a snapshot.
-func (s *MemoryStore) Delete(ctx context.Context, id uint64) error {
+func (s *MemoryStore) Delete(_ context.Context, id uint64) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 

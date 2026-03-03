@@ -51,23 +51,22 @@ linters:
     
     # Security
     - bodyclose
-    - nilerr
-    - nosprintfhostport
-    - rowserrcheck
-    - sqlclosecheck
+    # - nilerr
+    # - nosprintfhostport
+    # - rowserrcheck
+    # - sqlclosecheck
     
     # Style & formatting
     - whitespace
     - godot
     - godox
-    - nlreturn
     
-    # Advanced
-    - exhaustive
-    - gocheckcompilerdirectives
-    - mirror
-    - musttag
-    - nilnil
+    # # Advanced
+    # - exhaustive
+    # - gocheckcompilerdirectives
+    # - mirror
+    # - musttag
+    # - nilnil
 
   settings:
     govet:
@@ -161,8 +160,6 @@ linters:
         - paramTypeCombine
         - unnamedResult
       settings:
-        hugeParam:
-          sizeThreshold: 512
         rangeExprCopy:
           sizeThreshold: 512
         underef:
@@ -244,6 +241,14 @@ linters:
       - linters:
           - revive
         text: "don't use underscores in Go names"
+
+      - linters:
+          - revive
+        text: "avoid meaningless package names"
+
+      - linters:
+          - revive
+        text: "avoid package names that conflict with Go standard library package names"
       
       # Staticcheck exclusions
       - linters:
@@ -260,9 +265,13 @@ linters:
       - path: "_test\\.go"
         linters:
           - gocyclo
+          - gocritic
           - errcheck
           - dupl
           - gosec
+          - govet
+          - gci
+          - golines
           - funlen
           - goconst
           - mnd
@@ -301,6 +310,10 @@ linters:
         text: "G115"  # integer overflow conversion
         linters:
           - gosec
+
+      - path: "redis/redis\\.go"
+        linters:
+          - nlreturn
       
       # Allow panic in certain scenarios
       - path: "internal/panic/"

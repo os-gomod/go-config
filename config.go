@@ -156,7 +156,7 @@ func WithHook(hookType types.HookType, hook types.Hook) Option {
 
 // WithWatcher enables file watching for hot reload.
 func WithWatcher() Option {
-	return func(c *Config) error {
+	return func(_ *Config) error {
 		return nil // Watcher is already initialized
 	}
 }
@@ -192,7 +192,7 @@ func (c *Config) GetStringDefault(key, def string) string {
 // GetInt retrieves an int value by key.
 func (c *Config) GetInt(key string) int {
 	if v, ok := c.Get(key); ok {
-		if i, ok := v.Int(); ok {
+		if i, okInt := v.Int(); okInt {
 			return i
 		}
 	}
@@ -203,7 +203,7 @@ func (c *Config) GetInt(key string) int {
 // GetIntDefault retrieves an int value with a default.
 func (c *Config) GetIntDefault(key string, def int) int {
 	if v, ok := c.Get(key); ok {
-		if i, ok := v.Int(); ok {
+		if i, okInt := v.Int(); okInt {
 			return i
 		}
 	}
@@ -214,7 +214,7 @@ func (c *Config) GetIntDefault(key string, def int) int {
 // GetInt64 retrieves an int64 value by key.
 func (c *Config) GetInt64(key string) int64 {
 	if v, ok := c.Get(key); ok {
-		if i, ok := v.Int64(); ok {
+		if i, okInt := v.Int64(); okInt {
 			return i
 		}
 	}
@@ -225,7 +225,7 @@ func (c *Config) GetInt64(key string) int64 {
 // GetFloat64 retrieves a float64 value by key.
 func (c *Config) GetFloat64(key string) float64 {
 	if v, ok := c.Get(key); ok {
-		if f, ok := v.Float64(); ok {
+		if f, okFloat := v.Float64(); okFloat {
 			return f
 		}
 	}
@@ -236,7 +236,7 @@ func (c *Config) GetFloat64(key string) float64 {
 // GetBool retrieves a bool value by key.
 func (c *Config) GetBool(key string) bool {
 	if v, ok := c.Get(key); ok {
-		if b, ok := v.Bool(); ok {
+		if b, okBool := v.Bool(); okBool {
 			return b
 		}
 	}
@@ -247,7 +247,7 @@ func (c *Config) GetBool(key string) bool {
 // GetBoolDefault retrieves a bool value with a default.
 func (c *Config) GetBoolDefault(key string, def bool) bool {
 	if v, ok := c.Get(key); ok {
-		if b, ok := v.Bool(); ok {
+		if b, okBool := v.Bool(); okBool {
 			return b
 		}
 	}
@@ -258,7 +258,7 @@ func (c *Config) GetBoolDefault(key string, def bool) bool {
 // GetDuration retrieves a duration value by key.
 func (c *Config) GetDuration(key string) time.Duration {
 	if v, ok := c.Get(key); ok {
-		if d, ok := v.Duration(); ok {
+		if d, okDuration := v.Duration(); okDuration {
 			return d
 		}
 	}
@@ -269,7 +269,7 @@ func (c *Config) GetDuration(key string) time.Duration {
 // GetDurationDefault retrieves a duration value with a default.
 func (c *Config) GetDurationDefault(key string, def time.Duration) time.Duration {
 	if v, ok := c.Get(key); ok {
-		if d, ok := v.Duration(); ok {
+		if d, okDuration := v.Duration(); okDuration {
 			return d
 		}
 	}
@@ -280,7 +280,7 @@ func (c *Config) GetDurationDefault(key string, def time.Duration) time.Duration
 // GetSlice retrieves a slice value by key.
 func (c *Config) GetSlice(key string) []any {
 	if v, ok := c.Get(key); ok {
-		if s, ok := v.Raw().([]any); ok {
+		if s, okSlice := v.Raw().([]any); okSlice {
 			return s
 		}
 	}
@@ -291,7 +291,7 @@ func (c *Config) GetSlice(key string) []any {
 // GetMap retrieves a map value by key.
 func (c *Config) GetMap(key string) map[string]any {
 	if v, ok := c.Get(key); ok {
-		if m, ok := v.Raw().(map[string]any); ok {
+		if m, okMap := v.Raw().(map[string]any); okMap {
 			return m
 		}
 	}
@@ -653,7 +653,7 @@ func (c *Config) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON is not supported for Config.
-func (c *Config) UnmarshalJSON(data []byte) error {
+func (c *Config) UnmarshalJSON(_ []byte) error {
 	return types.NewError(types.ErrInvalidFormat, "cannot unmarshal into Config")
 }
 
@@ -902,48 +902,50 @@ func (c *Config) processTemplateDepth(s string, depth int) string {
 	result := s
 
 	for i := 0; i < len(result); i++ {
-		if result[i] == '$' && i+1 < len(result) && result[i+1] == '{' {
-			// Find closing brace
-			end := -1
-			for j := i + 2; j < len(result); j++ {
-				if result[j] == '}' {
-					end = j
-
-					break
-				}
-			}
-
-			if end == -1 {
-				continue
-			}
-
-			// Extract placeholder
-			placeholder := result[i+2 : end]
-
-			// Parse key and default
-			var key, def string
-			if colon := findColon(placeholder); colon >= 0 {
-				key = placeholder[:colon]
-				def = placeholder[colon+1:]
-			} else {
-				key = placeholder
-			}
-
-			// Get value
-			var replacement string
-			if v, ok := c.Get(key); ok {
-				replacement = c.processTemplateDepth(v.String(), depth+1)
-			} else if def != "" {
-				replacement = def
-			} else {
-				// Keep placeholder if no value and no default
-				continue
-			}
-
-			// Replace placeholder
-			result = result[:i] + replacement + result[end+1:]
-			i += len(replacement) - 1
+		if result[i] != '$' || i+1 >= len(result) || result[i+1] != '{' {
+			continue
 		}
+
+		// Find closing brace
+		end := -1
+		for j := i + 2; j < len(result); j++ {
+			if result[j] == '}' {
+				end = j
+
+				break
+			}
+		}
+
+		if end == -1 {
+			continue
+		}
+
+		// Extract placeholder
+		placeholder := result[i+2 : end]
+
+		// Parse key and default
+		var key, def string
+		if colon := findColon(placeholder); colon >= 0 {
+			key = placeholder[:colon]
+			def = placeholder[colon+1:]
+		} else {
+			key = placeholder
+		}
+
+		// Get value
+		var replacement string
+		if v, ok := c.Get(key); ok {
+			replacement = c.processTemplateDepth(v.String(), depth+1)
+		} else if def != "" {
+			replacement = def
+		} else {
+			// Keep placeholder if no value and no default
+			continue
+		}
+
+		// Replace placeholder
+		result = result[:i] + replacement + result[end+1:]
+		i += len(replacement) - 1
 	}
 
 	return result
@@ -978,7 +980,7 @@ func (c *Config) PrettyJSON() string {
 		return "{}"
 	}
 
-	var buf []byte
+	buf := make([]byte, 0, len(data))
 	buf = append(buf, data...)
 
 	// Already pretty printed by our exporter

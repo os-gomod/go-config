@@ -37,7 +37,6 @@ type FileSource struct {
 	Base
 	path    string
 	format  parser.Format
-	parser  parser.Parser
 	watcher *FileWatcher
 	watched atomic.Bool
 
@@ -82,7 +81,7 @@ func NewFileSource(path string, opts ...FileOption) *FileSource {
 }
 
 // Load reads configuration from the file.
-func (f *FileSource) Load(ctx context.Context) (map[string]types.Value, error) {
+func (f *FileSource) Load(_ context.Context) (map[string]types.Value, error) {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
 
@@ -135,7 +134,7 @@ func (f *FileSource) Watch(ctx context.Context, onChange func()) error {
 }
 
 // Close releases resources.
-func (f *FileSource) Close(ctx context.Context) error {
+func (f *FileSource) Close(_ context.Context) error {
 	if f.watcher != nil {
 		return f.watcher.Stop()
 	}
@@ -213,7 +212,7 @@ func NewEnvSource(opts ...EnvOption) *EnvSource {
 }
 
 // Load reads configuration from environment variables.
-func (e *EnvSource) Load(ctx context.Context) (map[string]types.Value, error) {
+func (e *EnvSource) Load(_ context.Context) (map[string]types.Value, error) {
 	result := make(map[string]types.Value)
 
 	environ := os.Environ()
@@ -250,7 +249,7 @@ func (e *EnvSource) Load(ctx context.Context) (map[string]types.Value, error) {
 }
 
 // Close is a no-op for environment source.
-func (e *EnvSource) Close(ctx context.Context) error {
+func (e *EnvSource) Close(_ context.Context) error {
 	return nil
 }
 
@@ -327,7 +326,7 @@ func NewMemorySource(opts ...MemoryOption) *MemorySource {
 }
 
 // Load returns the current memory configuration.
-func (m *MemorySource) Load(ctx context.Context) (map[string]types.Value, error) {
+func (m *MemorySource) Load(_ context.Context) (map[string]types.Value, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -360,7 +359,7 @@ func (m *MemorySource) Delete(key string) {
 }
 
 // Close is a no-op for memory source.
-func (m *MemorySource) Close(ctx context.Context) error {
+func (m *MemorySource) Close(_ context.Context) error {
 	return nil
 }
 
@@ -473,7 +472,7 @@ func (r *RemoteSource) InvalidateCache() {
 }
 
 // Close is a no-op for remote source.
-func (r *RemoteSource) Close(ctx context.Context) error {
+func (r *RemoteSource) Close(_ context.Context) error {
 	return nil
 }
 
@@ -620,12 +619,12 @@ func ResolvePath(path string) (string, error) {
 
 	// Check current directory
 	if _, err := os.Stat(path); err == nil {
-		abs, err := filepath.Abs(path)
-		if err != nil {
-			return "", err
+		absPath, absErr := filepath.Abs(path)
+		if absErr != nil {
+			return "", absErr
 		}
 
-		return abs, nil
+		return absPath, nil
 	}
 
 	// Check common locations
@@ -638,12 +637,12 @@ func ResolvePath(path string) (string, error) {
 	for _, loc := range locations {
 		fullPath := filepath.Join(loc, path)
 		if _, err := os.Stat(fullPath); err == nil {
-			abs, err := filepath.Abs(fullPath)
-			if err != nil {
-				return "", err
+			absPath, absErr := filepath.Abs(fullPath)
+			if absErr != nil {
+				return "", absErr
 			}
 
-			return abs, nil
+			return absPath, nil
 		}
 	}
 

@@ -4,6 +4,7 @@ package core
 
 import (
 	"context"
+	"reflect"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -34,7 +35,6 @@ type State struct {
 type StateMetadata struct {
 	sources   []types.SourceType
 	encrypted map[string]bool
-	checksum  [16]byte
 }
 
 // NewState creates a new immutable configuration state.
@@ -380,7 +380,7 @@ func (e *Engine) generateEvents(ctx context.Context, oldState, newState *State) 
 
 // valuesEqual compares two values for equality.
 func valuesEqual(a, b types.Value) bool {
-	return a.Raw() == b.Raw() && a.Type() == b.Type()
+	return reflect.DeepEqual(a.Raw(), b.Raw()) && a.Type() == b.Type()
 }
 
 // Observe registers an observer for configuration events.

@@ -50,7 +50,7 @@ import (
     "log"
     "time"
 
-    "github.com/os-gomod/go-config/config"
+    "github.com/os-gomod/go-config"
 )
 
 type AppConfig struct {

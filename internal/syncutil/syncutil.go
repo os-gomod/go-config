@@ -105,13 +105,13 @@ func (ab *AtomicBool) Get() bool {
 }
 
 // Swap sets the boolean value and returns the old value.
-func (ab *AtomicBool) Swap(new bool) bool {
-	return ab.value.Swap(new)
+func (ab *AtomicBool) Swap(next bool) bool {
+	return ab.value.Swap(next)
 }
 
 // CompareAndSwap performs an atomic compare-and-swap.
-func (ab *AtomicBool) CompareAndSwap(old, new bool) bool {
-	return ab.value.CompareAndSwap(old, new)
+func (ab *AtomicBool) CompareAndSwap(old, next bool) bool {
+	return ab.value.CompareAndSwap(old, next)
 }
 
 // AtomicInt64 is an atomic int64.
@@ -153,13 +153,13 @@ func (ai *AtomicInt64) Decrement() int64 {
 }
 
 // Swap sets the int64 value and returns the old value.
-func (ai *AtomicInt64) Swap(new int64) int64 {
-	return ai.value.Swap(new)
+func (ai *AtomicInt64) Swap(next int64) int64 {
+	return ai.value.Swap(next)
 }
 
 // CompareAndSwap performs an atomic compare-and-swap.
-func (ai *AtomicInt64) CompareAndSwap(old, new int64) bool {
-	return ai.value.CompareAndSwap(old, new)
+func (ai *AtomicInt64) CompareAndSwap(old, next int64) bool {
+	return ai.value.CompareAndSwap(old, next)
 }
 
 // Mutex with try-lock support.
@@ -363,7 +363,6 @@ func (b *Barrier) Wait() {
 type ContextGuard struct {
 	ctx    context.Context
 	cancel context.CancelFunc
-	mu     sync.Mutex
 	done   atomic.Bool
 }
 

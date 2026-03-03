@@ -172,12 +172,13 @@ func writeYAMLMap(w io.Writer, m map[string]any, indent int) error {
 	sort.Strings(keys)
 
 	indentStr := strings.Repeat("  ", indent)
+	var err error
 
 	for _, key := range keys {
 		value := m[key]
 
 		// Write key
-		_, err := fmt.Fprintf(w, "%s%s:", indentStr, key)
+		_, err = fmt.Fprintf(w, "%s%s:", indentStr, key)
 		if err != nil {
 			return err
 		}
@@ -185,27 +186,30 @@ func writeYAMLMap(w io.Writer, m map[string]any, indent int) error {
 		// Write value
 		switch v := value.(type) {
 		case map[string]any:
-			_, err := w.Write([]byte("\n"))
+			_, err = w.Write([]byte("\n"))
 			if err != nil {
 				return err
 			}
-			if err := writeYAMLMap(w, v, indent+1); err != nil {
+			err = writeYAMLMap(w, v, indent+1)
+			if err != nil {
 				return err
 			}
 		case []any:
-			_, err := w.Write([]byte("\n"))
+			_, err = w.Write([]byte("\n"))
 			if err != nil {
 				return err
 			}
-			if err := writeYAMLArray(w, v, indent+1); err != nil {
+			err = writeYAMLArray(w, v, indent+1)
+			if err != nil {
 				return err
 			}
 		default:
-			_, err := w.Write([]byte(" "))
+			_, err = w.Write([]byte(" "))
 			if err != nil {
 				return err
 			}
-			if err := writeYAML(w, v, indent); err != nil {
+			err = writeYAML(w, v, indent)
+			if err != nil {
 				return err
 			}
 		}
@@ -215,11 +219,14 @@ func writeYAMLMap(w io.Writer, m map[string]any, indent int) error {
 }
 
 // writeYAMLArray writes an array as YAML.
+//
+//nolint:gocyclo // Nested YAML structures require multi-branch handling.
 func writeYAMLArray(w io.Writer, a []any, indent int) error {
 	indentStr := strings.Repeat("  ", indent)
+	var err error
 
 	for _, value := range a {
-		_, err := fmt.Fprintf(w, "%s-", indentStr)
+		_, err = fmt.Fprintf(w, "%s-", indentStr)
 		if err != nil {
 			return err
 		}
@@ -227,12 +234,12 @@ func writeYAMLArray(w io.Writer, a []any, indent int) error {
 		switch v := value.(type) {
 		case map[string]any:
 			if len(v) == 0 {
-				_, err := w.Write([]byte(" {}\n"))
+				_, err = w.Write([]byte(" {}\n"))
 				if err != nil {
 					return err
 				}
 			} else {
-				_, err := w.Write([]byte("\n"))
+				_, err = w.Write([]byte("\n"))
 				if err != nil {
 					return err
 				}
@@ -243,53 +250,50 @@ func writeYAMLArray(w io.Writer, a []any, indent int) error {
 				}
 				sort.Strings(keys)
 
-				for i, key := range keys {
-					if i == 0 {
-						_, err := fmt.Fprintf(w, "%s  %s:", indentStr, key)
-						if err != nil {
-							return err
-						}
-					} else {
-						_, err := fmt.Fprintf(w, "%s  %s:", indentStr, key)
-						if err != nil {
-							return err
-						}
+				for _, key := range keys {
+					_, err = fmt.Fprintf(w, "%s  %s:", indentStr, key)
+					if err != nil {
+						return err
 					}
 
 					switch vv := v[key].(type) {
 					case map[string]any:
-						_, err := w.Write([]byte("\n"))
+						_, err = w.Write([]byte("\n"))
 						if err != nil {
 							return err
 						}
-						if err := writeYAMLMap(w, vv, indent+2); err != nil {
+						err = writeYAMLMap(w, vv, indent+2)
+						if err != nil {
 							return err
 						}
 					default:
-						_, err := w.Write([]byte(" "))
+						_, err = w.Write([]byte(" "))
 						if err != nil {
 							return err
 						}
-						if err := writeYAML(w, vv, indent); err != nil {
+						err = writeYAML(w, vv, indent)
+						if err != nil {
 							return err
 						}
 					}
 				}
 			}
 		case []any:
-			_, err := w.Write([]byte("\n"))
+			_, err = w.Write([]byte("\n"))
 			if err != nil {
 				return err
 			}
-			if err := writeYAMLArray(w, v, indent+1); err != nil {
+			err = writeYAMLArray(w, v, indent+1)
+			if err != nil {
 				return err
 			}
 		default:
-			_, err := w.Write([]byte(" "))
+			_, err = w.Write([]byte(" "))
 			if err != nil {
 				return err
 			}
-			if err := writeYAML(w, v, indent); err != nil {
+			err = writeYAML(w, v, indent)
+			if err != nil {
 				return err
 			}
 		}
@@ -329,6 +333,7 @@ func writeTOMLMap(w io.Writer, m map[string]any, prefix string) error {
 	}
 	sort.Strings(keys)
 
+	var err error
 	for _, key := range keys {
 		value := m[key]
 		fullKey := key
@@ -342,22 +347,25 @@ func writeTOMLMap(w io.Writer, m map[string]any, prefix string) error {
 			if isFlatMap(v) {
 				// Write as dotted keys
 				for k2, v2 := range v {
-					if err := writeTOMLKey(w, fullKey+"."+k2, v2); err != nil {
+					err = writeTOMLKey(w, fullKey+"."+k2, v2)
+					if err != nil {
 						return err
 					}
 				}
 			} else {
 				// Write as section
-				_, err := fmt.Fprintf(w, "[%s]\n", fullKey)
+				_, err = fmt.Fprintf(w, "[%s]\n", fullKey)
 				if err != nil {
 					return err
 				}
-				if err := writeTOML(w, v, fullKey); err != nil {
+				err = writeTOML(w, v, fullKey)
+				if err != nil {
 					return err
 				}
 			}
 		default:
-			if err := writeTOMLKey(w, fullKey, v); err != nil {
+			err = writeTOMLKey(w, fullKey, v)
+			if err != nil {
 				return err
 			}
 		}
@@ -420,7 +428,7 @@ func writeTOMLArray(w io.Writer, key string, a []any) error {
 
 	for i, v := range a {
 		if i > 0 {
-			_, err := w.Write([]byte(", "))
+			_, err = w.Write([]byte(", "))
 			if err != nil {
 				return err
 			}
@@ -428,29 +436,29 @@ func writeTOMLArray(w io.Writer, key string, a []any) error {
 
 		switch vv := v.(type) {
 		case string:
-			_, err := fmt.Fprintf(w, "\"%s\"", escapeString(vv))
+			_, err = fmt.Fprintf(w, "\"%s\"", escapeString(vv))
 			if err != nil {
 				return err
 			}
 		case int:
-			_, err := fmt.Fprintf(w, "%d", vv)
+			_, err = fmt.Fprintf(w, "%d", vv)
 			if err != nil {
 				return err
 			}
 		case bool:
 			if vv {
-				_, err := w.Write([]byte("true"))
+				_, err = w.Write([]byte("true"))
 				if err != nil {
 					return err
 				}
 			} else {
-				_, err := w.Write([]byte("false"))
+				_, err = w.Write([]byte("false"))
 				if err != nil {
 					return err
 				}
 			}
 		default:
-			_, err := fmt.Fprintf(w, "%v", vv)
+			_, err = fmt.Fprintf(w, "%v", vv)
 			if err != nil {
 				return err
 			}
@@ -542,6 +550,8 @@ func buildNested(data map[string]types.Value) map[string]any {
 }
 
 // needsQuoting checks if a YAML string needs quoting.
+//
+//nolint:gocyclo // Explicit character checks are intentional for fast path behavior.
 func needsQuoting(s string) bool {
 	if s == "" {
 		return true
@@ -568,7 +578,7 @@ func needsQuoting(s string) bool {
 	}
 
 	// Check for leading/trailing whitespace
-	if len(s) > 0 && (s[0] == ' ' || s[len(s)-1] == ' ' || s[0] == '\t' || s[len(s)-1] == '\t') {
+	if s != "" && (s[0] == ' ' || s[len(s)-1] == ' ' || s[0] == '\t' || s[len(s)-1] == '\t') {
 		return true
 	}
 

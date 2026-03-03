@@ -4,6 +4,7 @@ package types
 
 import (
 	"context"
+	"strconv"
 	"time"
 )
 
@@ -195,49 +196,11 @@ func formatValue(v any) string {
 
 // Helper functions to avoid fmt package overhead.
 func intToStr(v int) string {
-	if v == 0 {
-		return "0"
-	}
-	neg := v < 0
-	if neg {
-		v = -v
-	}
-	var b [20]byte
-	i := len(b)
-	for v > 0 {
-		i--
-		b[i] = byte(v%10) + '0'
-		v /= 10
-	}
-	if neg {
-		i--
-		b[i] = '-'
-	}
-
-	return string(b[i:])
+	return strconv.Itoa(v)
 }
 
 func int64ToStr(v int64) string {
-	if v == 0 {
-		return "0"
-	}
-	neg := v < 0
-	if neg {
-		v = -v
-	}
-	var b [20]byte
-	i := len(b)
-	for v > 0 {
-		i--
-		b[i] = byte(v%10) + '0'
-		v /= 10
-	}
-	if neg {
-		i--
-		b[i] = '-'
-	}
-
-	return string(b[i:])
+	return strconv.FormatInt(v, 10)
 }
 
 func float64ToStr(v float64) string {
@@ -269,7 +232,7 @@ func appendFloat(v float64) []byte {
 			fracStr = "0" + fracStr
 		}
 		// Trim trailing zeros
-		for len(fracStr) > 0 && fracStr[len(fracStr)-1] == '0' {
+		for fracStr != "" && fracStr[len(fracStr)-1] == '0' {
 			fracStr = fracStr[:len(fracStr)-1]
 		}
 		result += fracStr

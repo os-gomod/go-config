@@ -80,6 +80,8 @@ func (b *Binder) Bind(data map[string]types.Value, target any) error {
 }
 
 // setValue sets a field value from a configuration value.
+//
+//nolint:gocyclo // Multiple type branches are expected in a binder hot path.
 func (b *Binder) setValue(fv reflect.Value, value types.Value, field *fieldMeta) error {
 	// Handle pointer types
 	if fv.Kind() == reflect.Ptr {
@@ -100,13 +102,13 @@ func (b *Binder) setValue(fv reflect.Value, value types.Value, field *fieldMeta)
 			if d, ok := value.Duration(); ok {
 				fv.SetInt(int64(d))
 			} else {
-				d, err := time.ParseDuration(value.String())
+				parsedDuration, err := time.ParseDuration(value.String())
 				if err != nil {
 					return types.NewError(types.ErrTypeMismatch,
 						fmt.Sprintf("invalid duration for field '%s'", field.key),
 						types.WithCause(err))
 				}
-				fv.SetInt(int64(d))
+				fv.SetInt(int64(parsedDuration))
 			}
 		} else {
 			if i, ok := value.Int(); ok {
@@ -124,6 +126,10 @@ func (b *Binder) setValue(fv reflect.Value, value types.Value, field *fieldMeta)
 
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		if i, ok := value.Int(); ok {
+			if i < 0 {
+				return types.NewError(types.ErrTypeMismatch,
+					fmt.Sprintf("invalid uint for field '%s': negative value", field.key))
+			}
 			fv.SetUint(uint64(i))
 		} else {
 			i, err := strconv.ParseUint(value.String(), 10, 64)
@@ -139,26 +145,26 @@ func (b *Binder) setValue(fv reflect.Value, value types.Value, field *fieldMeta)
 		if f, ok := value.Float64(); ok {
 			fv.SetFloat(f)
 		} else {
-			f, err := strconv.ParseFloat(value.String(), 64)
+			parsedFloat, err := strconv.ParseFloat(value.String(), 64)
 			if err != nil {
 				return types.NewError(types.ErrTypeMismatch,
 					fmt.Sprintf("invalid float for field '%s'", field.key),
 					types.WithCause(err))
 			}
-			fv.SetFloat(f)
+			fv.SetFloat(parsedFloat)
 		}
 
 	case reflect.Bool:
 		if bl, ok := value.Bool(); ok {
 			fv.SetBool(bl)
 		} else {
-			bl, err := strconv.ParseBool(value.String())
+			parsedBool, err := strconv.ParseBool(value.String())
 			if err != nil {
 				return types.NewError(types.ErrTypeMismatch,
 					fmt.Sprintf("invalid bool for field '%s'", field.key),
 					types.WithCause(err))
 			}
-			fv.SetBool(bl)
+			fv.SetBool(parsedBool)
 		}
 
 	case reflect.Slice:
@@ -269,6 +275,8 @@ func (b *Binder) setStruct(fv reflect.Value, value types.Value, field *fieldMeta
 }
 
 // setReflectValue sets a reflect.Value from a raw value.
+//
+//nolint:gocyclo // Conversion logic intentionally handles many target kinds.
 func setReflectValue(v reflect.Value, raw any, target reflect.Type) error {
 	if raw == nil {
 		return nil

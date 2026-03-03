@@ -382,7 +382,7 @@ func TestObserver(t *testing.T) {
 
 	received := make(chan types.Event, 1)
 
-	cfg.Observe(func(ctx context.Context, event types.Event) {
+	cfg.Observe(func(_ context.Context, event types.Event) {
 		received <- event
 	})
 
