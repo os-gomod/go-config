@@ -11,11 +11,11 @@ import (
 	"time"
 
 	"github.com/os-gomod/go-config/bind"
+	"github.com/os-gomod/go-config/confcrypto"
+	"github.com/os-gomod/go-config/confparser"
 	"github.com/os-gomod/go-config/core"
-	"github.com/os-gomod/go-config/crypto"
 	"github.com/os-gomod/go-config/export"
 	"github.com/os-gomod/go-config/merge"
-	"github.com/os-gomod/go-config/parser"
 	"github.com/os-gomod/go-config/snapshot"
 	"github.com/os-gomod/go-config/source"
 	"github.com/os-gomod/go-config/types"
@@ -29,7 +29,7 @@ type Config struct {
 	engine    *core.Engine
 	binder    *bind.Binder
 	snapshots *snapshot.Manager
-	crypto    *crypto.CryptoManager
+	crypto    *confcrypto.CryptoManager
 	validator *validate.StructValidator
 	watcher   *watch.Manager
 	sources   []core.Source
@@ -126,7 +126,7 @@ func WithRemote(endpoint string, opts ...source.RemoteOption) Option {
 // WithEncryption enables encryption with the given key.
 func WithEncryption(key []byte) Option {
 	return func(c *Config) error {
-		mgr, err := crypto.NewCryptoManager(key)
+		mgr, err := confcrypto.NewCryptoManager(key)
 		if err != nil {
 			return err
 		}
@@ -409,11 +409,14 @@ func (c *Config) Watch(ctx context.Context) error {
 
 // Observe registers an observer for configuration changes.
 func (c *Config) Observe(fn func(context.Context, types.Event)) (func(), error) {
-	return c.engine.Observe(context.Background(), func(ctx context.Context, event types.Event) error {
-		fn(ctx, event)
+	return c.engine.Observe(
+		context.Background(),
+		func(ctx context.Context, event types.Event) error {
+			fn(ctx, event)
 
-		return nil
-	})
+			return nil
+		},
+	)
 }
 
 func (c *Config) notifyObservers(ctx context.Context, event types.Event) {
@@ -507,7 +510,7 @@ func (c *Config) ValidateStruct(target any) error {
 // --- Encryption ---
 
 // Encrypt encrypts a value.
-func (c *Config) Encrypt(plaintext string) (*crypto.EncryptedValue, error) {
+func (c *Config) Encrypt(plaintext string) (*confcrypto.EncryptedValue, error) {
 	if c.crypto == nil {
 		return nil, types.NewError(types.ErrCryptoError, "encryption not enabled")
 	}
@@ -516,7 +519,7 @@ func (c *Config) Encrypt(plaintext string) (*crypto.EncryptedValue, error) {
 }
 
 // Decrypt decrypts a value.
-func (c *Config) Decrypt(ev *crypto.EncryptedValue) (string, error) {
+func (c *Config) Decrypt(ev *confcrypto.EncryptedValue) (string, error) {
 	if c.crypto == nil {
 		return "", types.NewError(types.ErrCryptoError, "encryption not enabled")
 	}
@@ -748,8 +751,8 @@ func ReadFile(path string) (map[string]any, error) {
 		return nil, err
 	}
 
-	format := parser.DetectFormat(path)
-	registry := parser.NewRegistry()
+	format := confparser.DetectFormat(path)
+	registry := confparser.NewRegistry()
 	p, err := registry.Get(format)
 	if err != nil {
 		return nil, err
@@ -873,7 +876,12 @@ func (c *Config) ProcessTemplates() error {
 		if s, ok := value.Raw().(string); ok {
 			processed := c.processTemplate(s)
 			if processed != s {
-				data[key] = types.NewValue(processed, types.TypeString, value.Source(), value.Priority())
+				data[key] = types.NewValue(
+					processed,
+					types.TypeString,
+					value.Source(),
+					value.Priority(),
+				)
 				changed = true
 			}
 		}

@@ -1,6 +1,6 @@
-// Package parser provides configuration file parsing utilities.
+// Package confparser provides configuration file parsing utilities.
 // Supports YAML, JSON, and TOML formats with zero-allocation where possible.
-package parser
+package confparser
 
 import (
 	"bytes"

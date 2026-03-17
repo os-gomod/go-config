@@ -1,6 +1,6 @@
-// Package crypto provides AES-GCM encryption for sensitive configuration values.
+// Package confcrypto provides AES-GCM encryption for sensitive configuration values.
 // Implements zero plaintext persistence and secure key handling.
-package crypto
+package confcrypto
 
 import (
 	"crypto/aes"

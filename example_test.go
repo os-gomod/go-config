@@ -4,7 +4,6 @@ package config_test
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"time"
 
@@ -15,11 +14,11 @@ import (
 
 // AppConfig represents the complete application configuration.
 type AppConfig struct {
-	Server     ServerConfig     `config:"server" validate:"required"`
-	Database   DatabaseConfig   `config:"database" validate:"required"`
-	Logging    LoggingConfig    `config:"logging" validate:"required"`
+	Server     ServerConfig     `config:"server"     validate:"required"`
+	Database   DatabaseConfig   `config:"database"   validate:"required"`
+	Logging    LoggingConfig    `config:"logging"    validate:"required"`
 	Cache      CacheConfig      `config:"cache"`
-	Security   SecurityConfig   `config:"security" validate:"required"`
+	Security   SecurityConfig   `config:"security"   validate:"required"`
 	Features   FeaturesConfig   `config:"features"`
 	Monitoring MonitoringConfig `config:"monitoring"`
 	Tracing    TracingConfig    `config:"tracing"`
@@ -27,41 +26,41 @@ type AppConfig struct {
 
 // ServerConfig holds server-related configuration.
 type ServerConfig struct {
-	Host         string        `config:"host" validate:"required,hostname|ip"`
-	Port         int           `config:"port" validate:"required,min=1,max=65535"`
-	Mode         string        `config:"mode" validate:"required,oneof=development staging production"`
-	Timeout      time.Duration `config:"timeout" validate:"min=1s"`
-	ReadTimeout  time.Duration `config:"read_timeout" validate:"min=1s"`
+	Host         string        `config:"host"          validate:"required,hostname|ip"`
+	Port         int           `config:"port"          validate:"required,min=1,max=65535"`
+	Mode         string        `config:"mode"          validate:"required,oneof=development staging production"`
+	Timeout      time.Duration `config:"timeout"       validate:"min=1s"`
+	ReadTimeout  time.Duration `config:"read_timeout"  validate:"min=1s"`
 	WriteTimeout time.Duration `config:"write_timeout" validate:"min=1s"`
 }
 
 // DatabaseConfig holds database connection configuration.
 type DatabaseConfig struct {
-	Driver          string        `config:"driver" validate:"required,oneof=postgres mysql sqlite"`
-	Host            string        `config:"host" validate:"required_if=Driver postgres mysql"`
-	Port            int           `config:"port" validate:"required_if=Driver postgres mysql,min=1,max=65535"`
-	Name            string        `config:"name" validate:"required"`
-	User            string        `config:"user" validate:"required"`
+	Driver          string        `config:"driver"             validate:"required,oneof=postgres mysql sqlite"`
+	Host            string        `config:"host"               validate:"required_if=Driver postgres mysql"`
+	Port            int           `config:"port"               validate:"required_if=Driver postgres mysql,min=1,max=65535"`
+	Name            string        `config:"name"               validate:"required"`
+	User            string        `config:"user"               validate:"required"`
 	Password        string        `config:"password"`
-	MaxConns        int           `config:"max_conns" validate:"min=1,max=100"`
-	MinConns        int           `config:"min_conns" validate:"min=1,ltefield=MaxConns"`
+	MaxConns        int           `config:"max_conns"          validate:"min=1,max=100"`
+	MinConns        int           `config:"min_conns"          validate:"min=1,ltefield=MaxConns"`
 	ConnMaxLifetime time.Duration `config:"conn_max_lifetime"`
 	ConnMaxIdleTime time.Duration `config:"conn_max_idle_time"`
 }
 
 // LoggingConfig holds logging configuration.
 type LoggingConfig struct {
-	Level  string `config:"level" validate:"required,oneof=debug info warn error"`
+	Level  string `config:"level"  validate:"required,oneof=debug info warn error"`
 	Format string `config:"format" validate:"required,oneof=json text"`
 	Output string `config:"output" validate:"required,oneof=stdout stderr file"`
-	File   string `config:"file" validate:"required_if=Output file"`
+	File   string `config:"file"   validate:"required_if=Output file"`
 }
 
 // CacheConfig holds cache configuration.
 type CacheConfig struct {
 	Enabled bool   `config:"enabled"`
-	Driver  string `config:"driver" validate:"required_if=Enabled true,oneof=redis memcached"`
-	TTL     int    `config:"ttl" validate:"min=0"`
+	Driver  string `config:"driver"  validate:"required_if=Enabled true,oneof=redis memcached"`
+	TTL     int    `config:"ttl"     validate:"min=0"`
 	Redis   struct {
 		Host     string `config:"host" validate:"required_if=Driver redis"`
 		Port     int    `config:"port" validate:"required_if=Driver redis,min=1,max=65535"`
@@ -72,11 +71,11 @@ type CacheConfig struct {
 
 // SecurityConfig holds security-related configuration.
 type SecurityConfig struct {
-	JWTSecret          string   `config:"jwt_secret" validate:"required,min=32"`
-	EncryptionKey      string   `config:"encryption_key" validate:"required,min=32"`
+	JWTSecret          string   `config:"jwt_secret"           validate:"required,min=32"`
+	EncryptionKey      string   `config:"encryption_key"       validate:"required,min=32"`
 	CORSEnabled        bool     `config:"cors_enabled"`
 	CORSAllowedOrigins []string `config:"cors_allowed_origins" validate:"dive,url"`
-	RateLimit          int      `config:"rate_limit" validate:"min=0"`
+	RateLimit          int      `config:"rate_limit"           validate:"min=0"`
 }
 
 // FeaturesConfig holds feature flag configuration.
@@ -89,15 +88,15 @@ type FeaturesConfig struct {
 
 // MonitoringConfig holds monitoring configuration.
 type MonitoringConfig struct {
-	MetricsPort        int    `config:"metrics_port" validate:"min=1,max=65535"`
+	MetricsPort        int    `config:"metrics_port"         validate:"min=1,max=65535"`
 	HealthCheckEnabled bool   `config:"health_check_enabled"`
 	HealthCheckPath    string `config:"health_check_path"`
 }
 
 // TracingConfig holds tracing configuration.
 type TracingConfig struct {
-	Provider   string  `config:"provider" validate:"oneof=jaeger zipkin none"`
-	Endpoint   string  `config:"endpoint" validate:"required_if=Provider jaeger zipkin,url"`
+	Provider   string  `config:"provider"    validate:"oneof=jaeger zipkin none"`
+	Endpoint   string  `config:"endpoint"    validate:"required_if=Provider jaeger zipkin,url"`
 	SampleRate float64 `config:"sample_rate" validate:"min=0,max=1"`
 }
 
@@ -107,10 +106,10 @@ func ExampleNew() {
 	prevHost, hadHost := os.LookupEnv("APP_SERVER_HOST")
 	prevPort, hadPort := os.LookupEnv("APP_SERVER_PORT")
 	if err := os.Setenv("APP_SERVER_HOST", "localhost"); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	if err := os.Setenv("APP_SERVER_PORT", "8080"); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	defer func() {
 		if hadHost {
@@ -132,7 +131,7 @@ func ExampleNew() {
 		config.WithEnv("APP_"),
 	)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	defer cfg.Close(context.Background())
 
@@ -155,13 +154,13 @@ func ExampleNew_withObserver() {
 		}),
 	)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	defer cfg.Close(context.Background())
 
 	// Watch for changes
-	if err := cfg.Watch(context.Background()); err != nil {
-		log.Fatal(err)
+	if setErr := cfg.Watch(context.Background()); setErr != nil {
+		panic(fmt.Errorf("Failed to start hot reload watcher: %w", setErr))
 	}
 
 	// Output:
@@ -177,22 +176,22 @@ func ExampleConfig_Bind() {
 	prevDBName, hadDBName := os.LookupEnv("APP_DATABASE_NAME")
 
 	if err := os.Setenv("APP_SERVER_HOST", "localhost"); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	if err := os.Setenv("APP_SERVER_PORT", "8080"); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	if err := os.Setenv("APP_DATABASE_USER", "admin"); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	if err := os.Setenv("APP_DATABASE_HOST", "db.local"); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	if err := os.Setenv("APP_DATABASE_PORT", "5432"); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	if err := os.Setenv("APP_DATABASE_NAME", "mydb"); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	defer func() {
 		if hadHost {
@@ -232,13 +231,13 @@ func ExampleConfig_Bind() {
 		config.WithEnv("APP_"),
 	)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	defer cfg.Close(context.Background())
 
 	var appCfg AppConfig
-	if err := cfg.Bind(&appCfg); err != nil {
-		log.Fatal(err)
+	if setErr := cfg.Bind(&appCfg); setErr != nil {
+		panic(fmt.Errorf("Failed to bind config: %w", setErr))
 	}
 
 	fmt.Printf("Server: %s:%d\n", appCfg.Server.Host, appCfg.Server.Port)
@@ -264,7 +263,7 @@ func ExampleConfig_Validate() {
 		}),
 	)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	defer cfg.Close(context.Background())
 
@@ -276,8 +275,8 @@ func ExampleConfig_Validate() {
 		Build()
 
 	// Validate
-	if err := cfg.Validate(plan); err != nil {
-		log.Fatal("Validation failed:", err)
+	if setErr := cfg.Validate(plan); setErr != nil {
+		panic(fmt.Errorf("Validation failed: %w", setErr))
 	}
 
 	fmt.Println("Configuration is valid")
@@ -294,7 +293,7 @@ func ExampleConfig_Snapshot() {
 		}),
 	)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	defer cfg.Close(context.Background())
 
@@ -306,8 +305,8 @@ func ExampleConfig_Snapshot() {
 	cfg.Set("server.port", 8081)
 
 	// Later, restore from snapshot
-	if err := cfg.Restore(snap); err != nil {
-		log.Fatal(err)
+	if setErr := cfg.Restore(snap); setErr != nil {
+		panic(fmt.Errorf("Failed to restore: %w", setErr))
 	}
 
 	fmt.Println("Configuration restored to previous state")
@@ -326,21 +325,21 @@ func ExampleConfig_Export() {
 		}),
 	)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	defer cfg.Close(context.Background())
 
 	// Export to JSON
 	jsonData, err := cfg.ExportJSON()
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	fmt.Println("JSON empty:", len(jsonData) == 0)
 
 	// Export to YAML
 	yamlData, err := cfg.ExportYAML()
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	fmt.Println("YAML empty:", len(yamlData) == 0)
 
@@ -359,21 +358,21 @@ func ExampleConfig_encryption() {
 		config.WithEncryption(key),
 	)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	defer cfg.Close(context.Background())
 
 	// Encrypt a value
 	encrypted, err := cfg.Encrypt("my-secret-password")
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	fmt.Println("Encrypted:", encrypted.Ciphertext != "")
 
 	// Decrypt a value
 	decrypted, err := cfg.Decrypt(encrypted)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	fmt.Printf("Decrypted: %s\n", decrypted)
 
@@ -389,13 +388,13 @@ func ExampleLoadEnv() {
 	prevHost, hadHost := os.LookupEnv("APP_SERVER_HOST")
 	prevDBName, hadDBName := os.LookupEnv("APP_DATABASE_NAME")
 	if err := os.Setenv("APP_SERVER_PORT", "8080"); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	if err := os.Setenv("APP_SERVER_HOST", "localhost"); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	if err := os.Setenv("APP_DATABASE_NAME", "mydb"); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	defer func() {
 		if hadPort {
@@ -417,7 +416,7 @@ func ExampleLoadEnv() {
 
 	cfg, err := config.LoadEnv("APP_")
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	defer cfg.Close(context.Background())
 
@@ -437,13 +436,13 @@ func ExampleConfig_hotReload() {
 		config.WithFile("config.yaml"),
 	)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	defer cfg.Close(context.Background())
 
 	// Start watching for changes
-	if err := cfg.Watch(context.Background()); err != nil {
-		log.Fatal(err)
+	if setErr := cfg.Watch(context.Background()); setErr != nil {
+		panic(fmt.Errorf("Failed to start hot reload watcher: %w", setErr))
 	}
 
 	fmt.Println("Hot reload watcher started")
@@ -462,7 +461,7 @@ func ExampleConfig_Merge() {
 		}),
 	)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	defer base.Close(context.Background())
 
@@ -474,13 +473,13 @@ func ExampleConfig_Merge() {
 		}),
 	)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	defer override.Close(context.Background())
 
 	// Merge configurations
-	if err := base.Merge(override); err != nil {
-		log.Fatal(err)
+	if setErr := base.Merge(override); setErr != nil {
+		panic(fmt.Errorf("Failed to merge configurations: %w", setErr))
 	}
 
 	fmt.Println("Host:", base.GetString("server.host")) // localhost (unchanged)
@@ -504,13 +503,13 @@ func ExampleConfig_templateProcessing() {
 		}),
 	)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	defer cfg.Close(context.Background())
 
 	// Process templates
-	if err := cfg.ProcessTemplates(); err != nil {
-		log.Fatal(err)
+	if setErr := cfg.ProcessTemplates(); setErr != nil {
+		panic(fmt.Errorf("Failed to process templates: %w", setErr))
 	}
 
 	fmt.Println("Home:", cfg.GetString("app.home"))     // /opt/myapp
@@ -534,13 +533,13 @@ func ExampleConfig_context() {
 		}),
 	)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	defer cfg.Close(ctx)
 
 	// Use context for timeout-aware loading
-	if err := cfg.Reload(ctx); err != nil {
-		log.Fatal(err)
+	if setErr := cfg.Reload(ctx); setErr != nil {
+		panic(fmt.Errorf("Failed to reload config: %w", setErr))
 	}
 
 	// Attach config to context for propagation
@@ -559,7 +558,7 @@ func ExampleConfig_context() {
 func ExampleGlobal() {
 	prevPort, hadPort := os.LookupEnv("APP_SERVER_PORT")
 	if err := os.Setenv("APP_SERVER_PORT", "8080"); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	defer func() {
 		if hadPort {
@@ -574,7 +573,7 @@ func ExampleGlobal() {
 		config.WithFile("config.yaml"),
 		config.WithEnv("APP_"),
 	); err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 	defer config.CloseGlobal(context.Background())
 

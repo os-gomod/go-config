@@ -12,7 +12,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/os-gomod/go-config/parser"
+	"github.com/os-gomod/go-config/confparser"
 	"github.com/os-gomod/go-config/types"
 )
 
@@ -36,7 +36,7 @@ func (b *Base) Type() types.SourceType { return b.sourceType }
 type FileSource struct {
 	Base
 	path    string
-	format  parser.Format
+	format  confparser.Format
 	watcher *FileWatcher
 	watched atomic.Bool
 
@@ -52,7 +52,7 @@ func WithFilePriority(p int) FileOption {
 }
 
 // WithFileFormat sets the file format explicitly.
-func WithFileFormat(format parser.Format) FileOption {
+func WithFileFormat(format confparser.Format) FileOption {
 	return func(f *FileSource) { f.format = format }
 }
 
@@ -65,7 +65,7 @@ func NewFileSource(path string, opts ...FileOption) *FileSource {
 			sourceType: types.SourceFile,
 		},
 		path:   path,
-		format: parser.FormatAuto,
+		format: confparser.FormatAuto,
 	}
 
 	for _, opt := range opts {
@@ -73,8 +73,8 @@ func NewFileSource(path string, opts ...FileOption) *FileSource {
 	}
 
 	// Auto-detect format if needed
-	if f.format == parser.FormatAuto {
-		f.format = parser.DetectFormat(path)
+	if f.format == confparser.FormatAuto {
+		f.format = confparser.DetectFormat(path)
 	}
 
 	return f
@@ -93,7 +93,7 @@ func (f *FileSource) Load(_ context.Context) (map[string]types.Value, error) {
 	}
 
 	// Get parser
-	registry := parser.NewRegistry()
+	registry := confparser.NewRegistry()
 	p, err := registry.Get(f.format)
 	if err != nil {
 		return nil, err
@@ -106,7 +106,7 @@ func (f *FileSource) Load(_ context.Context) (map[string]types.Value, error) {
 	}
 
 	// Flatten nested structure
-	flattened := parser.Flatten(parsed, "")
+	flattened := confparser.Flatten(parsed, "")
 
 	// Convert to values
 	result := make(map[string]types.Value, len(flattened))
@@ -330,7 +330,7 @@ func (m *MemorySource) Load(_ context.Context) (map[string]types.Value, error) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
-	flattened := parser.Flatten(m.data, "")
+	flattened := confparser.Flatten(m.data, "")
 	result := make(map[string]types.Value, len(flattened))
 	for k, v := range flattened {
 		result[k] = types.NewValue(
@@ -444,7 +444,7 @@ func (r *RemoteSource) Load(ctx context.Context) (map[string]types.Value, error)
 	}
 
 	// Flatten and convert
-	flattened := parser.Flatten(data, "")
+	flattened := confparser.Flatten(data, "")
 	result := make(map[string]types.Value, len(flattened))
 	for k, v := range flattened {
 		result[k] = types.NewValue(

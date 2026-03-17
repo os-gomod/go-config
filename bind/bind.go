@@ -406,7 +406,12 @@ func (b *Binder) walkFields(rt reflect.Type, prefix []string, parentIndex []int,
 }
 
 // parseTag parses a struct tag into field metadata.
-func (b *Binder) parseTag(field reflect.StructField, tag string, prefix []string, parentIndex []int) *fieldMeta {
+func (b *Binder) parseTag(
+	field reflect.StructField,
+	tag string,
+	prefix []string,
+	parentIndex []int,
+) *fieldMeta {
 	fm := &fieldMeta{
 		index: append(append([]int(nil), parentIndex...), field.Index...),
 	}

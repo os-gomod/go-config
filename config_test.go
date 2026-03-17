@@ -162,8 +162,8 @@ func TestSet(t *testing.T) {
 	defer cfg.Close(context.Background())
 
 	// Set string
-	if err := cfg.Set("key", "value"); err != nil {
-		t.Fatalf("Failed to set: %v", err)
+	if setErr := cfg.Set("key", "value"); setErr != nil {
+		t.Fatalf("Failed to set: %v", setErr)
 	}
 
 	if v := cfg.GetString("key"); v != "value" {
@@ -171,8 +171,8 @@ func TestSet(t *testing.T) {
 	}
 
 	// Overwrite
-	if err := cfg.Set("key", "newvalue"); err != nil {
-		t.Fatalf("Failed to overwrite: %v", err)
+	if setErr := cfg.Set("key", "newvalue"); setErr != nil {
+		t.Fatalf("Failed to overwrite: %v", setErr)
 	}
 
 	if v := cfg.GetString("key"); v != "newvalue" {
@@ -196,8 +196,8 @@ func TestDelete(t *testing.T) {
 		t.Fatal("Key should exist")
 	}
 
-	if err := cfg.Delete("key"); err != nil {
-		t.Fatalf("Failed to delete: %v", err)
+	if setErr := cfg.Delete("key"); setErr != nil {
+		t.Fatalf("Failed to delete: %v", setErr)
 	}
 
 	if cfg.Has("key") {
@@ -229,8 +229,8 @@ func TestBind(t *testing.T) {
 	defer cfg.Close(context.Background())
 
 	var appCfg AppConfig
-	if err := cfg.Bind(&appCfg); err != nil {
-		t.Fatalf("Failed to bind: %v", err)
+	if setErr := cfg.Bind(&appCfg); setErr != nil {
+		t.Fatalf("Failed to bind: %v", setErr)
 	}
 
 	if appCfg.Server.Host != "localhost" {
@@ -279,8 +279,8 @@ func TestSnapshot(t *testing.T) {
 	}
 
 	// Restore from snapshot
-	if err := cfg.Restore(snap); err != nil {
-		t.Fatalf("Failed to restore: %v", err)
+	if setErr := cfg.Restore(snap); setErr != nil {
+		t.Fatalf("Failed to restore: %v", setErr)
 	}
 
 	if v := cfg.GetString("key"); v != "original" {
@@ -365,8 +365,8 @@ func TestValidateRequiredPresent(t *testing.T) {
 		Range("server.port", 1, 65535, "port must be valid").
 		Build()
 
-	if err := cfg.Validate(plan); err != nil {
-		t.Fatalf("Validation should pass, got: %v", err)
+	if setErr := cfg.Validate(plan); setErr != nil {
+		t.Fatalf("Validation should pass, got: %v", setErr)
 	}
 }
 
@@ -422,8 +422,8 @@ func TestMerge(t *testing.T) {
 	}
 	defer override.Close(context.Background())
 
-	if err := base.Merge(override); err != nil {
-		t.Fatalf("Failed to merge: %v", err)
+	if setErr := base.Merge(override); setErr != nil {
+		t.Fatalf("Failed to merge: %v", setErr)
 	}
 
 	if v := base.GetString("key1"); v != "value1" {
@@ -515,12 +515,12 @@ func TestClose(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	if err := cfg.Close(ctx); err != nil {
-		t.Fatalf("Failed to close: %v", err)
+	if setErr := cfg.Close(ctx); setErr != nil {
+		t.Fatalf("Failed to close: %v", setErr)
 	}
 
 	// Operations on closed config should fail
-	if err := cfg.Set("key", "value"); err == nil {
+	if setErr := cfg.Set("key", "value"); setErr == nil {
 		t.Error("Set should fail on closed config")
 	}
 }
